@@ -1,0 +1,1 @@
+In this project i am aiming to reproduce the "MinD-Vis" model and classify their pictures. Using theirs fMRI pre-trained model for image reconstruction and checking out if this model is also able to clsssify the images properly.
