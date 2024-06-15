@@ -1,10 +1,11 @@
+# Build Semantic Segmentation
 import torch
 import torchvision.transforms as transforms
 import torchvision.models as models
 from PIL import Image
 
 # Load the pre-trained ResNet-50 model trained on ImageNet
-model = models.resnet50(pretrained=True)
+model = models.resnet50(pretrained=True) # replace with face mask detection, gesture detection
 
 # Set the model to evaluation mode
 model.eval()
