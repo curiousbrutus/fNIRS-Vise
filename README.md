@@ -41,7 +41,7 @@ Neurological Research: Providing insights into the neural mechanisms underlying 
 Clinical Applications: Developing diagnostic and therapeutic tools for neurological and psychological conditions.
 
 🤝 Get Involved
-We welcome collaborations and contributions from researchers, developers, and enthusiasts interested in brain decoding, BCIs, and fNIRS. Contact us (eyyub.gvn@gmail.com) to explore potential partnerships and contribute to this cutting-edge research.
+We welcome collaborations and contributions from researchers, developers, and enthusiasts interested in brain decoding, BCIs, and fNIRS. Contact me (eyyub.gvn@gmail.com) to explore potential partnerships and contribute to this cutting-edge research.
 
 📜 License
 This project is licensed under the Apache License, Version 2.0. See the LICENSE file for details.
