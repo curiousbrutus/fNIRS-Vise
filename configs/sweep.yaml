@@ -1,0 +1,52 @@
+# Hydra configuration for hyperparameter sweeps
+defaults:
+  - _self_
+
+# Sweep parameters  
+sweep:
+  transfer_mode: 
+    - "feature_guided"
+    - "distill" 
+    - "weight_init"
+  distill_alpha:
+    - 0.0
+    - 0.3
+    - 0.5  
+    - 0.7
+  freeze_fmri:
+    - true
+    - false
+  learning_rate:
+    - 1e-4
+    - 3e-4
+    - 1e-3
+  batch_size:
+    - 4
+    - 8
+
+# Data paths
+data:
+  fnirs_data_path: "./data/fNIRS/nemo_pre"
+  fmri_data_path: "./data/mindvis_features"
+  num_workers: 2
+
+# Training config
+training:
+  max_epochs: 50
+  seed: 42
+  accumulate_grad_batches: 1
+
+# Model config
+model:
+  fnirs_channels: 52
+  fnirs_time: 200
+  fmri_dim: 768
+  num_classes: 4
+  hidden_dim: 128
+  weight_decay: 1e-4
+
+# Logging
+logging:
+  project: "fmri-fnirs-transfer"
+  log_model: true
+  save_dir: "./logs"
