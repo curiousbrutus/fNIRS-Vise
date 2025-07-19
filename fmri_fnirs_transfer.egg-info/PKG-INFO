@@ -1,3 +1,53 @@
+Metadata-Version: 2.4
+Name: fmri-fnirs-transfer
+Version: 0.1.0
+Summary: fMRI-teacher → fNIRS-student Transfer Learning for Brain Signal Decoding
+Author-email: Eyyub Guven <eyyub.gvn@gmail.com>
+License: Apache-2.0
+Project-URL: Homepage, https://github.com/curiousbrutus/fNIRS-Vise
+Project-URL: Repository, https://github.com/curiousbrutus/fNIRS-Vise
+Project-URL: Documentation, https://github.com/curiousbrutus/fNIRS-Vise/blob/main/README_TRANSFER.md
+Project-URL: Issues, https://github.com/curiousbrutus/fNIRS-Vise/issues
+Keywords: fNIRS,fMRI,transfer-learning,brain-computer-interface,pytorch-lightning
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Topic :: Scientific/Engineering :: Medical Science Apps.
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: torch==2.2.0
+Requires-Dist: lightning==2.2
+Requires-Dist: hydra-core==1.3
+Requires-Dist: wandb
+Requires-Dist: osfclient
+Requires-Dist: pytest
+Requires-Dist: pre-commit
+Requires-Dist: black
+Requires-Dist: isort
+Requires-Dist: scikit-learn>=1.3.0
+Requires-Dist: numpy>=1.21.0
+Requires-Dist: pandas>=1.3.0
+Requires-Dist: matplotlib>=3.5.0
+Requires-Dist: seaborn>=0.11.0
+Requires-Dist: omegaconf>=2.3.0
+Requires-Dist: einops>=0.6.0
+Requires-Dist: scipy>=1.9.0
+Requires-Dist: tqdm>=4.64.0
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: pytest-cov; extra == "dev"
+Requires-Dist: pre-commit; extra == "dev"
+Requires-Dist: black; extra == "dev"
+Requires-Dist: isort; extra == "dev"
+Requires-Dist: flake8; extra == "dev"
+Provides-Extra: gpu
+Requires-Dist: torch==2.2.0+cu118; extra == "gpu"
+
 # fMRI-teacher → fNIRS-student Transfer Learning Pipeline
 
 [![CI](https://github.com/curiousbrutus/fNIRS-Vise/workflows/CI/badge.svg)](https://github.com/curiousbrutus/fNIRS-Vise/actions)

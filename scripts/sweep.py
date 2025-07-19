@@ -1,22 +1,198 @@
+#!/usr/bin/env python3
 """
-Hyperparameter sweep script using Hydra for automated ablation studies.
+Hydra Sweep Script for fMRI-fNIRS Transfer Learning
 
-This script launches multiple training runs with different configurations
-to find optimal transfer learning settings.
+Launches hyperparameter sweeps using Hydra's multirun functionality.
+Automatically logs to WandB project "fmri-fnirs-codespace".
 """
 
-import hydra
-from hydra import compose, initialize
-from omegaconf import DictConfig, OmegaConf
-import subprocess
+import os
 import sys
+import hydra
+from omegaconf import DictConfig, OmegaConf
+import pytorch_lightning as pl
+from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, LearningRateMonitor
+import torch
+import wandb
+import argparse
 from pathlib import Path
-import itertools
+
+# Add src to path for imports
+sys.path.append(str(Path(__file__).parent.parent / "src"))
+
+from models.fmri_fnirs_net import Model
+from data.datamodule import FmriFnirsDataModule
 
 
-@hydra.main(config_path="../configs", config_name="sweep", version_base=None)
-def sweep_main(cfg: DictConfig) -> None:
-    """Main sweep function using Hydra configuration."""
+def create_trainer(cfg: DictConfig) -> pl.Trainer:
+    """Create PyTorch Lightning trainer with callbacks and logger"""
+    
+    # WandB logger
+    wandb_logger = WandbLogger(
+        project=cfg.experiment.project,
+        name=f"{cfg.experiment.name}_{cfg.model.backbone}_{cfg.transfer.mode}",
+        tags=cfg.experiment.tags,
+        save_dir="./sweep_logs",
+        offline=False
+    )
+    
+    # Callbacks
+    callbacks = []
+    
+    # Model checkpoint
+    checkpoint_callback = ModelCheckpoint(
+        monitor="val_acc",
+        mode="max",
+        save_top_k=3,
+        filename="epoch{epoch:02d}-val_acc{val_acc:.3f}",
+        save_last=True
+    )
+    callbacks.append(checkpoint_callback)
+    
+    # Early stopping
+    early_stopping = EarlyStopping(
+        monitor="val_loss",
+        patience=cfg.training.get("patience", 10),
+        mode="min",
+        verbose=True
+    )
+    callbacks.append(early_stopping)
+    
+    # Learning rate monitor
+    lr_monitor = LearningRateMonitor(logging_interval="step")
+    callbacks.append(lr_monitor)
+    
+    # Create trainer
+    trainer = pl.Trainer(
+        max_epochs=cfg.training.max_epochs,
+        accelerator="auto",
+        devices="auto",
+        precision="16-mixed" if torch.cuda.is_available() else 32,
+        logger=wandb_logger,
+        callbacks=callbacks,
+        enable_progress_bar=True,
+        log_every_n_steps=10,
+        val_check_interval=0.5,
+        gradient_clip_val=1.0,
+        accumulate_grad_batches=cfg.training.get("accumulate_grad_batches", 1),
+        deterministic=False  # Set to True for full reproducibility (slower)
+    )
+    
+    return trainer
+
+
+def create_model(cfg: DictConfig) -> Model:
+    """Create model from config"""
+    model = Model(
+        backbone=cfg.model.backbone,
+        transfer_mode=cfg.transfer.mode,
+        num_classes=cfg.model.get("num_classes", 4),
+        fnirs_channels=cfg.model.get("fnirs_channels", 52),
+        fnirs_time=cfg.model.get("fnirs_time", 200),
+        fmri_dim=cfg.model.get("fmri_features", 768),
+        learning_rate=cfg.training.learning_rate,
+        weight_decay=cfg.training.get("weight_decay", 1e-5),
+        distill_alpha=cfg.transfer.get("distill_alpha", 0.5),
+        distill_temperature=cfg.transfer.get("distill_temperature", 4.0),
+        freeze_backbone=cfg.transfer.get("freeze_backbone", False)
+    )
+    return model
+
+
+def create_datamodule(cfg: DictConfig) -> FmriFnirsDataModule:
+    """Create data module from config"""
+    datamodule = FmriFnirsDataModule(
+        fnirs_data_path=cfg.data.get("fnirs_data_path", "./data/fnirs"),
+        fmri_data_path=cfg.data.get("fmri_data_path", "./data/fmri"),
+        batch_size=cfg.training.batch_size,
+        num_workers=cfg.data.get("num_workers", 2),
+        cv_method=cfg.data.get("cv_method", "loso"),
+        test_size=cfg.data.get("test_size", 0.2),
+        use_fnirs2mw=cfg.data.get("use_fnirs2mw", True)
+    )
+    return datamodule
+
+
+@hydra.main(version_base=None, config_path="../configs", config_name="sweep")
+def run_experiment(cfg: DictConfig) -> float:
+    """
+    Run single experiment with given configuration.
+    
+    Returns validation accuracy for optimization.
+    """
+    
+    print("=" * 80)
+    print("STARTING EXPERIMENT")
+    print("=" * 80)
+    print(f"Configuration:")
+    print(OmegaConf.to_yaml(cfg))
+    print("=" * 80)
+    
+    # Set seed for reproducibility
+    pl.seed_everything(cfg.get("seed", 42), workers=True)
+    
+    # Create components
+    model = create_model(cfg)
+    datamodule = create_datamodule(cfg)
+    trainer = create_trainer(cfg)
+    
+    # Setup data
+    datamodule.setup()
+    
+    # Log model summary
+    print(f"\nModel: {cfg.model.backbone} with {cfg.transfer.mode} transfer")
+    print(f"Parameters: {sum(p.numel() for p in model.parameters()):,}")
+    print(f"Trainable: {sum(p.numel() for p in model.parameters() if p.requires_grad):,}")
+    
+    try:
+        # Train model
+        trainer.fit(model, datamodule)
+        
+        # Test model
+        test_results = trainer.test(model, datamodule, ckpt_path="best")
+        
+        # Extract validation accuracy for optimization
+        val_acc = trainer.callback_metrics.get("val_acc", 0.0)
+        test_acc = test_results[0].get("test_acc", 0.0) if test_results else 0.0
+        
+        print("=" * 80)
+        print("EXPERIMENT COMPLETED")
+        print(f"Best Validation Accuracy: {val_acc:.4f}")
+        print(f"Test Accuracy: {test_acc:.4f}")
+        print("=" * 80)
+        
+        # Clean up CUDA memory
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        
+        # Close wandb run
+        wandb.finish()
+        
+        return float(val_acc)
+        
+    except Exception as e:
+        print(f"Experiment failed: {e}")
+        wandb.finish()
+        return 0.0
+
+
+def main():
+    """Main sweep launcher"""
+    print("🚀 Launching fMRI-fNIRS Transfer Learning Sweep")
+    print(f"📊 Project: fmri-fnirs-codespace")
+    print(f"💾 CUDA Available: {torch.cuda.is_available()}")
+    
+    if torch.cuda.is_available():
+        print(f"🎯 GPU: {torch.cuda.get_device_name(0)}")
+        print(f"💿 GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
+    
+    # Run the experiment
+    run_experiment()
+
+
+if __name__ == "__main__":
+    main()
     
     print("=== fMRI-fNIRS Transfer Learning Sweep ===")
     print(f"Configuration:\n{OmegaConf.to_yaml(cfg)}")

@@ -1,52 +1,46 @@
-# Hydra configuration for hyperparameter sweeps
+# @package _global_
+# Hydra sweep configuration for fMRI-fNIRS transfer learning
+# Optimized hyperparameter search across transfer modes and distillation parameters
+
 defaults:
+  - base
   - _self_
 
-# Sweep parameters  
-sweep:
-  transfer_mode: 
-    - "feature_guided"
-    - "distill" 
-    - "weight_init"
-  distill_alpha:
-    - 0.0
-    - 0.3
-    - 0.5  
-    - 0.7
-  freeze_fmri:
-    - true
-    - false
-  learning_rate:
-    - 1e-4
-    - 3e-4
-    - 1e-3
-  batch_size:
-    - 4
-    - 8
+# Hydra sweep configuration
+hydra:
+  mode: MULTIRUN
+  sweep:
+    dir: sweep_outputs
+    subdir: ${now:%Y-%m-%d}/${now:%H-%M-%S}
+  job:
+    name: fmri_fnirs_sweep
+    chdir: true
+    
+# Experiment tracking
+experiment:
+  name: fmri_fnirs_sweep
+  project: fmri-fnirs-codespace
+  tags:
+    - sweep
+    - transfer_learning
+    - multirun
 
-# Data paths
-data:
-  fnirs_data_path: "./data/fNIRS/nemo_pre"
-  fmri_data_path: "./data/mindvis_features"
-  num_workers: 2
-
-# Training config
+# Override base config for sweep-specific settings
 training:
-  max_epochs: 50
-  seed: 42
-  accumulate_grad_batches: 1
-
-# Model config
-model:
-  fnirs_channels: 52
-  fnirs_time: 200
-  fmri_dim: 768
-  num_classes: 4
-  hidden_dim: 128
-  weight_decay: 1e-4
-
-# Logging
-logging:
-  project: "fmri-fnirs-transfer"
-  log_model: true
-  save_dir: "./logs"
+  max_epochs: 50  # Reduced for sweep efficiency
+  
+# Memory optimization for parallel jobs
+memory:
+  gradient_checkpointing: true
+  clear_cache_interval: 5
+  
+# Logging configuration
+trainer:
+  logger:
+    class_path: pytorch_lightning.loggers.WandbLogger
+    init_args:
+      project: ${experiment.project}
+      name: "${experiment.name}_${model.backbone}_${transfer.mode}"
+      tags: ${experiment.tags}
+      save_dir: ./sweep_logs
+      offline: false
