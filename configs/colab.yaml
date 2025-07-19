@@ -1,0 +1,143 @@
+# @package _global_
+# Hydra configuration for Google Colab training
+# Optimized for K80 GPUs with 12GB VRAM
+
+defaults:
+  - _self_
+  - override hydra/launcher: basic
+
+# Model architecture
+model:
+  fnirs_channels: 52
+  fnirs_timepoints: 200
+  fmri_features: 768
+  num_classes: 4
+  hidden_dim: 256
+  dropout: 0.3
+  
+  # Cross-modal attention
+  attention:
+    dim: 256
+    heads: 8
+    dropout: 0.1
+    
+# Transfer learning configuration
+transfer:
+  mode: feature_guided  # Options: feature_guided, distill, concat
+  freeze_fmri: true
+  distill_alpha: 0.5
+  distill_temperature: 4.0
+  
+# Training hyperparameters
+training:
+  batch_size: 8  # Optimized for K80 memory
+  max_epochs: 100
+  learning_rate: 3e-4
+  weight_decay: 1e-5
+  warmup_steps: 500
+  
+  # Learning rate scheduler
+  scheduler:
+    name: cosine
+    warmup_epochs: 10
+    min_lr: 1e-6
+    
+# Data configuration
+data:
+  # OSF data download
+  osf_project_id: "your_osf_project_id_here"
+  
+  # Cross-validation
+  cv_method: loso  # Leave-One-Subject-Out
+  test_size: 0.2
+  random_state: 42
+  
+  # Data preprocessing
+  preprocessing:
+    fnirs_bandpass: [0.01, 0.2]
+    fnirs_normalize: true
+    fmri_standardize: true
+    
+  # Data augmentation
+  augmentation:
+    noise_factor: 0.05
+    temporal_shift: 5
+    dropout_rate: 0.1
+
+# PyTorch Lightning trainer
+trainer:
+  accelerator: gpu
+  devices: 1
+  precision: 16  # Mixed precision for memory efficiency
+  
+  # Callbacks
+  callbacks:
+    early_stopping:
+      monitor: val_loss
+      patience: 15
+      mode: min
+      
+    model_checkpoint:
+      monitor: val_accuracy
+      mode: max
+      save_top_k: 3
+      filename: "epoch{epoch:02d}-val_acc{val_accuracy:.3f}"
+      
+    lr_monitor:
+      logging_interval: step
+      
+  # Logging
+  logger:
+    class_path: pytorch_lightning.loggers.WandbLogger
+    init_args:
+      project: fmri_fnirs_transfer
+      name: colab_experiment
+      save_dir: ./logs
+      offline: false  # Set to true if no internet
+
+# Memory optimization for Colab
+memory:
+  # Gradient checkpointing
+  gradient_checkpointing: true
+  
+  # Memory monitoring
+  log_memory_usage: true
+  clear_cache_interval: 10  # Clear CUDA cache every N batches
+  
+  # Batch size adjustment
+  auto_scale_batch_size: false
+  accumulate_grad_batches: 2  # Effective batch size = batch_size * accumulate_grad_batches
+
+# Hydra experiment configuration
+hydra:
+  run:
+    dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: ./multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra:job.num}
+
+# Experiment tracking
+experiment:
+  name: colab_transfer_learning
+  tags:
+    - transfer_learning
+    - fmri_fnirs
+    - colab
+    - pytorch_lightning
+  notes: "Transfer learning experiment running on Google Colab"
+
+# Reproducibility
+seed: 42
+deterministic: false  # Set to true for full reproducibility (slower)
+
+# Colab-specific optimizations
+colab:
+  # Auto-restart on OOM
+  auto_restart_on_oom: true
+  
+  # Session timeout handling
+  keep_alive: true
+  
+  # File system
+  use_drive_mount: false  # Set to true if using Google Drive
+  drive_path: "/content/drive/MyDrive/fNIRS-Vise"

@@ -1,0 +1,60 @@
+# @package _global_
+# Base configuration for fMRI-fNIRS transfer learning
+
+defaults:
+  - _self_
+
+# Model architecture
+model:
+  fnirs_channels: 52
+  fnirs_timepoints: 200
+  fmri_features: 768
+  num_classes: 4
+  hidden_dim: 256
+  dropout: 0.3
+  
+  # Cross-modal attention
+  attention:
+    dim: 256
+    heads: 8
+    dropout: 0.1
+
+# Transfer learning
+transfer:
+  mode: feature_guided
+  freeze_fmri: true
+  distill_alpha: 0.5
+  distill_temperature: 4.0
+
+# Training
+training:
+  batch_size: 16
+  max_epochs: 200
+  learning_rate: 1e-3
+  weight_decay: 1e-5
+  warmup_steps: 1000
+
+# Data
+data:
+  cv_method: loso
+  test_size: 0.2
+  random_state: 42
+
+# Trainer
+trainer:
+  accelerator: auto
+  devices: auto
+  precision: 32
+  
+  callbacks:
+    early_stopping:
+      monitor: val_loss
+      patience: 20
+      mode: min
+    model_checkpoint:
+      monitor: val_accuracy
+      mode: max
+      save_top_k: 5
+
+# Reproducibility
+seed: 42
