@@ -1,0 +1,13 @@
+data:
+  root: data/nemo
+  loso: true
+model:
+  transfer_mode: distill
+  freeze_fmri: true
+  distill_alpha: 0.5
+trainer:
+  max_epochs: 100
+  accelerator: gpu
+  devices: 1
+  precision: 16
+  gradient_clip_val: 1.0

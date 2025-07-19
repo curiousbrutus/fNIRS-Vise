@@ -1,5 +1,6 @@
 import torch
 import time
+from lightning.pytorch.callbacks import Callback
 
 class MemoryGuard:
     """Monitors GPU RAM and suggests reducing batch size if OOM."""
@@ -44,3 +45,15 @@ class MemoryGuard:
         else:
             print("ERROR: CUDA Out of Memory again. Automatic batch size reduction failed. Please reduce batch size manually.")
             return current_batch_size
+
+    @staticmethod
+    def check_oom():
+        """Checks for Out of Memory condition and clears cache."""
+        if torch.cuda.is_available() and torch.cuda.memory_allocated() > 9_000_000_000:
+            print("Clearing CUDA cache due to high memory usage.")
+            torch.cuda.empty_cache()
+
+class MemoryGuardCallback(Callback):
+    """Lightning Callback to integrate MemoryGuard."""
+    def on_before_backward(self, trainer, pl_module, loss):
+        MemoryGuard.check_oom()
