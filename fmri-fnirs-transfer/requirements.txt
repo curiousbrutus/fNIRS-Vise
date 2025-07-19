@@ -1,0 +1,9 @@
+lightning==2.2.0
+hydra-core==1.3.2
+wandb
+osfclient
+pytest
+pre-commit
+black
+isort
+torch==2.2.0+cu118 --index-url https://download.pytorch.org/whl/cu118
