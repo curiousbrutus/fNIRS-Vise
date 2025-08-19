@@ -92,7 +92,7 @@ class TestModel:
         batch = {
             "fnirs": self.fnirs_input,
             "fmri": self.fmri_input,
-            "labels": self.labels
+            "label": self.labels
         }
         
         # Test training step
@@ -110,7 +110,7 @@ class TestModel:
         batch = {
             "fnirs": self.fnirs_input,
             "fmri": self.fmri_input,
-            "labels": self.labels,
+            "label": self.labels,
             "teacher_logits": torch.randn(self.batch_size, 4)  # Mock teacher predictions
         }
         
@@ -161,7 +161,7 @@ class TestModel:
         batch = {
             "fnirs": self.fnirs_input,
             "fmri": self.fmri_input,
-            "labels": self.labels
+            "label": self.labels
         }
         
         with torch.no_grad():
