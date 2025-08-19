@@ -166,16 +166,25 @@ class TestFmriFnirsDataModule:
         test_subjects = set()
         
         if dm.train_dataset and len(dm.train_dataset) > 0:
-            for sample in dm.train_dataset.samples:
-                train_subjects.add(sample['subject'])
+            if hasattr(dm.train_dataset, 'samples'):
+                for sample in dm.train_dataset.samples:
+                    train_subjects.add(sample['subject'])
+            else:
+                train_subjects.update(dm.train_dataset.subjects)
                 
         if dm.val_dataset and len(dm.val_dataset) > 0:
-            for sample in dm.val_dataset.samples:
-                val_subjects.add(sample['subject'])
+            if hasattr(dm.val_dataset, 'samples'):
+                for sample in dm.val_dataset.samples:
+                    val_subjects.add(sample['subject'])
+            else:
+                val_subjects.update(dm.val_dataset.subjects)
                 
         if dm.test_dataset and len(dm.test_dataset) > 0:
-            for sample in dm.test_dataset.samples:
-                test_subjects.add(sample['subject'])
+            if hasattr(dm.test_dataset, 'samples'):
+                for sample in dm.test_dataset.samples:
+                    test_subjects.add(sample['subject'])
+            else:
+                test_subjects.update(dm.test_dataset.subjects)
         
         # Test subject should only be in test set
         assert "sub01" in test_subjects, "Test subject should be in test set"

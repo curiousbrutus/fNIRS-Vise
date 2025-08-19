@@ -114,7 +114,7 @@ def validate_data_pipeline():
             sample = dataset[0]
             assert "fnirs" in sample, "Missing fNIRS data in sample"
             assert "fmri" in sample, "Missing fMRI data in sample"
-            assert "labels" in sample, "Missing labels in sample"
+            assert "label" in sample, "Missing label in sample"
             
             print(f"  ✅ Sample shapes: fNIRS {sample['fnirs'].shape}, fMRI {sample['fmri'].shape}")
             
@@ -125,9 +125,9 @@ def validate_data_pipeline():
             
             assert "fnirs" in batch, "Missing fNIRS data in batch"
             assert "fmri" in batch, "Missing fMRI data in batch"
-            assert "labels" in batch, "Missing labels in batch"
+            assert "label" in batch, "Missing label in batch"
             
-            print(f"  ✅ Batch shapes: fNIRS {batch['fnirs'].shape}, fMRI {batch['fmri'].shape}, Labels {batch['labels'].shape}")
+            print(f"  ✅ Batch shapes: fNIRS {batch['fnirs'].shape}, fMRI {batch['fmri'].shape}, Labels {batch['label'].shape}")
         
     except Exception as e:
         print(f"  ❌ Data pipeline failed: {e}")
@@ -197,7 +197,7 @@ def validate_configuration():
         
         # Test base config
         with initialize(version_base=None, config_path="configs"):
-            cfg = compose(config_name="config")
+            cfg = compose(config_name="base")
             print(f"  ✅ Base config loaded: {list(cfg.keys())}")
         
         # Test sweep config  

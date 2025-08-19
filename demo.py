@@ -9,8 +9,8 @@ from pathlib import Path
 import warnings
 warnings.filterwarnings('ignore')
 
-from src.model import FmriGuidedFnirsNet
-from src.data_module import FmriFnirsDataModule
+from src.models.fmri_fnirs_net import Model as FmriGuidedFnirsNet
+from src.data.datamodule import FmriFnirsDataModule
 from src.utils import memory_usage_analysis
 
 def create_dummy_data():
@@ -57,7 +57,7 @@ def test_model_architectures():
     
     configs = [
         {"transfer_mode": "feature_guided", "name": "Cross-Attention"},
-        {"transfer_mode": "distill", "distill_alpha": 0.5, "name": "Knowledge Distillation"},  
+        {"transfer_mode": "knowledge_distill", "distill_alpha": 0.5, "name": "Knowledge Distillation"},  
         {"transfer_mode": "weight_init", "name": "Weight Initialization"}
     ]
     
@@ -86,8 +86,7 @@ def test_data_loading():
     
     # Test DataModule
     dm = FmriFnirsDataModule(
-        fnirs_data_path=fnirs_path,
-        fmri_data_path=fmri_path,
+        data_root=str(Path("./data/dummy").parent),
         batch_size=4,
         test_subject="sub01"
     )

@@ -259,7 +259,7 @@ class Model(pl.LightningModule):
     def training_step(self, batch: Dict[str, torch.Tensor], batch_idx: int) -> torch.Tensor:
         """Training step with optional knowledge distillation."""
         fnirs = batch["fnirs"]
-        labels = batch["labels"]
+        labels = batch["label"]
         fmri = batch.get("fmri", None)
         
         # Forward pass
@@ -295,7 +295,7 @@ class Model(pl.LightningModule):
     def validation_step(self, batch: Dict[str, torch.Tensor], batch_idx: int) -> torch.Tensor:
         """Validation step."""
         fnirs = batch["fnirs"]
-        labels = batch["labels"]
+        labels = batch["label"]
         fmri = batch.get("fmri", None)
         
         logits = self(fnirs, fmri)
@@ -310,7 +310,7 @@ class Model(pl.LightningModule):
     def test_step(self, batch: Dict[str, torch.Tensor], batch_idx: int) -> torch.Tensor:
         """Test step."""
         fnirs = batch["fnirs"]
-        labels = batch["labels"]
+        labels = batch["label"]
         fmri = batch.get("fmri", None)
         
         logits = self(fnirs, fmri)
